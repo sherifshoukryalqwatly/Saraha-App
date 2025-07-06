@@ -1,7 +1,11 @@
-import router from 'express';
-import { signUp } from './services/auth.service.js';
-const authRouter = router();
+import express from 'express';
+import { login, resetPassword, signUp } from './services/auth.service.js';
 
-authRouter.get('/signup',signUp);
+const authRouter = express.Router();
+
+authRouter.post('/signup',signUp);
+authRouter.get('/login',login);
+authRouter.get('/resetpassword',resetPassword);
+
 
 export default authRouter;

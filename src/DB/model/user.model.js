@@ -8,7 +8,7 @@ const userSchema = new Schema({
         required:[true,"userName Is Required"],
         trim:true,
         lowerCase:true,
-        unique:true,
+        unique:[true,"you Are Registered"],
         validate:{
             validator: function (value){
                 return /^[a-zA-Z0-9]+$/.test(value)
