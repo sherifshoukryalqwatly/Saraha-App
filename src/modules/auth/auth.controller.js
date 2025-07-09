@@ -1,7 +1,7 @@
-import express from 'express';
+import {Router} from 'express';
 import { login, resetPassword, signUp } from './services/auth.service.js';
 
-const authRouter = express.Router();
+const authRouter = Router();
 
 authRouter.post('/signup',signUp);
 authRouter.get('/login',login);

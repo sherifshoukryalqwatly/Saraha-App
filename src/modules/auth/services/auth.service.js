@@ -1,19 +1,57 @@
 import { userModel } from "../../../DB/model/user.model.js";
+import bcrypt from 'bcryptjs'
+import CryptoJs from 'crypto-js'
+import jwt from 'jsonwebtoken'
 export const signUp = async (req,res)=>{
     try {
-        const {name,email,password}= req.body;
-        if(!email||!password){
+        const {
+            userName,
+            email,
+            password,
+            confirmPassword,
+            gender,
+            role,
+            isVerified,
+            bio,
+            dateOfBirth,
+            phoneNumber,
+            address}= req.body;
+        if(!userName||!email||!password||!confirmPassword||!gender||!phoneNumber){
             return res.status(400).json({
-                message:"Email and Password are required"
+                message:"Username,Email,Password,Gender and Phone Number are required"
             })
         }
-        await userModel.create({name:name,userName:email,password:password});
+        if(password !== confirmPassword){
+            res.status(400).json({
+                message:"Passwoed And Confirm Password Don't Match"
+            })
+        }
+
+        const isUserExist = await userModel.findOne({email});
+
+        if(isUserExist){
+            res.status(409).json({
+                message:"User Already Exists"
+            })
+        }
+
+        const hashedPassword = bcrypt.hashSync(password,10);
+        const encryptePhoneNumber = CryptoJs.AES.encrypt(phoneNumber,"PhoneNumber-Secret-Key").toString();
+        const encrypteAddress = CryptoJs.AES.encrypt(address,"address-Secret-Key").toString();
+        const user = await userModel.create({
+            userName,
+            email,
+            password:hashedPassword,
+            gender,
+            role,
+            isVerified,
+            bio,
+            dateOfBirth,
+            phoneNumber:encryptePhoneNumber,
+            address:encrypteAddress
+        });
         res.status(201).json({
             message:"User Created Successfully",
-            user:{
-                name:name,
-                userName:email
-            }
         }) 
     } catch (error) {
         res.status(500).json({
@@ -31,24 +69,37 @@ export const login = async (req,res)=>{
                 message:"Email and Password are required"
             });
         }
-        const user = await userModel.findOne({userName:email});
+        const user = await userModel.findOne({email:email});
         if(!user){
             return res.status(404).json({
                 message:"User Not Found"
             });
         }
-        if(user.password !== password){
+
+        const isPasswordMatch = bcrypt.compareSync(password,user.password);
+
+        if(!isPasswordMatch){
             return res.status(401).json({
                 message:"Invalid Username OR Password"
             })
         }
+        const decryptPhoneNumber = CryptoJs.AES.decrypt(user.phoneNumber,"PhoneNumber-Secret-Key").toString(CryptoJs.enc.Utf8);
+        const decryptAddress = CryptoJs.AES.decrypt(user.address,"address-Secret-Key").toString(CryptoJs.enc.Utf8);
+
+        user.phoneNumber = decryptPhoneNumber;
+        user.address = decryptAddress;
+
+        const token = jwt.sign(
+            {id:user._id,name:user.name,email:user.email},
+            "jwr-secret-key",
+            {expiresIn:"1d"}
+        );
+
         res.status(200).json({
             message:"Login Successful",
-            user:{
-                name:user.name,
-                userName:user.userName
-            }
+            token:token,
         });
+
     } catch (error) {
         res.status(500).json({
             message:"Internal Server Error",
