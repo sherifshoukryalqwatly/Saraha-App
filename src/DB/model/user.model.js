@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import { GENDER, ROLE } from "../../constant/constant.js";
 
 const userSchema = new Schema({
     userName:{
@@ -29,13 +30,13 @@ const userSchema = new Schema({
     },
     gender:{
         type:String,
-        enum:{values:["male","female"],message:"gender Must be male Or female"},
+        enum:{values:Object.values(GENDER),message:"gender Must be male Or female"},
         required:[true,"Gender Is Required"],
     },
     role:{
         type:String,
-        enum:{values:["admin","user"],message:"Role Must be Admin Or User"},
-        default:"user",
+        enum:{values:Object.values(ROLE),message:"Role Must be Admin Or User"},
+        default:ROLE.USER,
     },
     isVerified:{
         type:Boolean,

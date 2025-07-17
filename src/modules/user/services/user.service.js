@@ -3,7 +3,7 @@ import { userModel } from "../../../DB/model/user.model.js";
 export const getAllUsers = async (req,res)=>{
     try {
         const users = await userModel.find({},{password:0,__v:0,phoneNumber:0,address:0});
-        res.status(201).json({
+        res.status(200).json({
             status:"Success",
             users:users
         })

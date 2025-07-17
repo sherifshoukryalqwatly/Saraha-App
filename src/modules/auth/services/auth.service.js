@@ -35,9 +35,9 @@ export const signUp = async (req,res)=>{
             })
         }
 
-        const hashedPassword = bcrypt.hashSync(password,10);
-        const encryptePhoneNumber = CryptoJs.AES.encrypt(phoneNumber,"PhoneNumber-Secret-Key").toString();
-        const encrypteAddress = CryptoJs.AES.encrypt(address,"address-Secret-Key").toString();
+        const hashedPassword = bcrypt.hashSync(password,+process.env.SALT);
+        const encryptePhoneNumber = CryptoJs.AES.encrypt(phoneNumber,process.env.PHONE_SECRET_KEY).toString();
+        const encrypteAddress = CryptoJs.AES.encrypt(address,process.env.ADDRESS_SECRET_KEY).toString();
         const user = await userModel.create({
             userName,
             email,
@@ -83,15 +83,15 @@ export const login = async (req,res)=>{
                 message:"Invalid Username OR Password"
             })
         }
-        const decryptPhoneNumber = CryptoJs.AES.decrypt(user.phoneNumber,"PhoneNumber-Secret-Key").toString(CryptoJs.enc.Utf8);
-        const decryptAddress = CryptoJs.AES.decrypt(user.address,"address-Secret-Key").toString(CryptoJs.enc.Utf8);
+        const decryptPhoneNumber = CryptoJs.AES.decrypt(user.phoneNumber,process.env.PHONE_SECRET_KEY).toString(CryptoJs.enc.Utf8);
+        const decryptAddress = CryptoJs.AES.decrypt(user.address,process.env.ADDRESS_SECRET_KEY).toString(CryptoJs.enc.Utf8);
 
         user.phoneNumber = decryptPhoneNumber;
         user.address = decryptAddress;
 
         const token = jwt.sign(
             {id:user._id,name:user.name,email:user.email},
-            "jwr-secret-key",
+            (user.role==="user")?process.env.JWT_USER_SECRET:process.env.JWT_ADMIN_SECRET,
             {expiresIn:"1d"}
         );
 
@@ -102,6 +102,7 @@ export const login = async (req,res)=>{
 
     } catch (error) {
         res.status(500).json({
+            status:"Failed",
             message:"Internal Server Error",
             error:error.message
         });
